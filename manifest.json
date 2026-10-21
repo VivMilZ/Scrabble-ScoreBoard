@@ -2,7 +2,7 @@
   "name": "Scrabble Scorekeeper",
   "short_name": "Scrabble",
   "description": "Offline Scrabble score tracker",
-  "start_url": "./MillarScrabbleScoreBoard.html",  
+  "start_url": "./index.html",  
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
