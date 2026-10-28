@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body>
+    &lt;
+    <title>Scrabble Scoreboard</title>
+
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+
+    <meta name="theme-color" content="#0066cc" />
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <meta name="apple-mobile-web-app-title" content="Scrabble" />
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, Helvetica, sans-serif;
+        background: linear-gradient(135deg, #1e3c72, #2a5298, #4b6cb7);
+        min-height: 100vh;
+      }
+
+      h1 {
+        color: white;
+        text-shadow: 2px 2px 5px black;
+        text-align: center;
+        white-space: nowrap;
+        font-size: clamp(1.2rem, 4vw, 2.5rem);
+        margin: 10px 0;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: auto;
+      }
+
+      .card {
+        background: #fffef7;
+        border: 3px solid #d4af37;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      }
+
+      label {
+        font-weight: bold;
+      }
+
+      input[type="text"] {
+        padding: 8px;
+        width: 180px;
+        margin: 5px;
+      }
+
+      input[type="number"] {
+        width: 90px;
+        padding: 8px;
+      }
+
+      select {
+        padding: 8px;
+        font-size: 16px;
+      }
+
+      button {
+        background: #2a5298;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        margin: 5px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      button:hover {
+        background: #1e3c72;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th {
+        background: #d4af37;
+        color: black;
+        padding: 10px;
+        border: 1px solid #b08a00;
+      }
+
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: center;
+      }
+
+      .totalCell {
+        font-weight: bold;
+        font-size: 1.2em;
+        color: #006400;
+        background: #f8f5e6;
+      }
+
+      #winnerBanner {
+        display: none;
+        position: fixed;
+        inset: 0;
+
+        background: linear-gradient(135deg, #ffd700, #fff8c6, #d4af37);
+
+        z-index: 1000;
+
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+      }
+
+      #winnerText {
+        font-size: 72px;
+        text-align: center;
+        color: #5a3d00;
+        font-weight: bold;
+        text-shadow: 3px 3px 8px white;
+        animation: pulse 1s infinite;
+      }
+
+      @keyframes pulse {
+        50% {
+          transform: scale(1.08);
+        }
+      }
+
+      #closeWinner {
+        background: #5a3d00;
+        color: white;
+        font-size: 22px;
+        padding: 12px 30px;
+      }
+
+      #closeWinner:hover {
+        background: black;
+      }
+
+      canvas {
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: 1001;
+      }
+
+      #historyTable {
+        margin-top: 10px;
+      }
+
+      #historyTable th {
+        background: #d4af37;
+      }
+
+      .sessionButtons {
+        margin-top: 15px;
+      }
+    </style>
+
+    <div class="container">
+      <h1>🏆 Scrabble Scoreboard 🏆</h1>
+
+      <div class="card">
+        <h2>New Game</h2>
+
+        <label>Number of Players:</label>
+
+        <select id="playerCount" onchange="buildPlayers()">
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected="">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+        </select>
+
+        <div id="playerNames"></div>
+
+        <br />
+
+        <button onclick="startGame()">Start Game</button>
+      </div>
+
+      <div id="gameArea" style="display: none">
+        <div class="card">
+          <h2>Scores</h2>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Round Score</th>
+                <th>Running Total</th>
+              </tr>
+            </thead>
+
+            <tbody id="scoreBody"></tbody>
+          </table>
+
+          <div class="sessionButtons">
+            <button onclick="addRound()">Add Round</button>
+
+            <button onclick="adjustScore()">Bonus / Penalty</button>
+
+            <button onclick="endGame()">Finish Game</button>
+
+            <button onclick="newGame()">New Game</button>
+
+            <button onclick="closeApplication()">End Session</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Round History</h2>
+
+          <table id="historyTable">
+            <thead>
+              <tr id="historyHeader">
+                <th>Round</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="winnerBanner">
+      <div id="winnerText"></div>
+
+      <br />
+
+      <button id="closeWinner" onclick="closeBanner()">Close Celebration</button>
+    </div>
+
+    <canvas id="confetti"></canvas>
+
+    <script>
+
+      let playerNames = [];
+      let totals = [];
+      let history = [];
+      let roundNumber = 1;
+
+      function buildPlayers(){
+
+          const count =
+          parseInt(
+              document.getElementById("playerCount").value
+          );
+
+          let html = "";
+
+          for(let i = 0; i < count; i++){
+
+              html += `
+              <p>
+                  Player ${i + 1}
+                  <input
+                  type="text"
+                  id="name${i}"
+                  placeholder="Player ${i + 1}">
+              </p>
+              `;
+          }
+
+          document.getElementById("playerNames")
+          .innerHTML = html;
+      }
+
+      buildPlayers();
+
+      function startGame(){
+
+          const count =
+          parseInt(
+             document.getElementById("playerCount").value
+          );
+
+          playerNames = [];
+          totals = [];
+
+          let scoreRows = "";
+
+          let historyHeader =
+          "<th>Round</th>";
+
+          for(let i = 0; i < count; i++){
+
+              let playerName =
+              document.getElementById("name" + i)
+              .value
+              .trim();
+
+              if(playerName === ""){
+
+                  playerName =
+                  "Player " + (i + 1);
+              }
+
+              playerNames.push(playerName);
+
+              totals.push(0);
+
+              historyHeader +=
+              `<th>${playerName}</th>`;
+
+              scoreRows += `
+
+              <tr>
+
+              <td>${playerName}</td>
+
+              <td>
+
+              <input
+              type="number"
+              id="score${i}"
+              value="">
+
+              </td>
+
+              <td
+              id="total${i}"
+              class="totalCell">
+
+              0
+
+              </td>
+
+              </tr>
+
+              `;
+          }
+
+          document.getElementById("scoreBody")
+          .innerHTML = scoreRows;
+
+          document.getElementById("historyHeader")
+          .innerHTML = historyHeader;
+
+          document.getElementById("historyBody")
+          .innerHTML = "";
+
+          document.getElementById("gameArea")
+          .style.display = "block";
+
+          roundNumber = 1;
+      }
+
+      function addRound(){
+
+          let historyRow =
+          `<tr><td>${roundNumber}</td>`;
+
+          const roundData = [];
+
+          for(let i = 0;
+              i < playerNames.length;
+              i++){
+
+              const roundScore =
+              parseInt(
+                 document.getElementById("score"+i)
+                 .value
+              ) || 0;
+
+              totals[i] += roundScore;
+
+              document.getElementById("total"+i)
+              .innerText = totals[i];
+
+              roundData.push(roundScore);
+
+              historyRow +=
+              `<td>${roundScore}</td>`;
+
+              document.getElementById("score"+i)
+              .value = "";
+          }
+
+          history.push({
+              round: roundNumber,
+              scores: [...roundData]
+          });
+
+          historyRow +=
+          `<td><button onclick="editRound(${history.length-1})">Edit</button></td></tr>`;
+
+          document.getElementById("historyBody")
+          .innerHTML += historyRow;
+
+          roundNumber++;
+      }
+
+
+
+      function adjustScore(){
+
+          const player =
+          parseInt(
+              prompt(
+                  `Player Number (1-${playerNames.length})`
+              )
+          ) - 1;
+
+          if(player < 0 || player >= playerNames.length)
+              return;
+
+          const points =
+          parseInt(
+              prompt(
+                  "Bonus (+) or Penalty (-)"
+              )
+          );
+
+          if(isNaN(points))
+              return;
+
+          totals[player] += points;
+
+          document.getElementById("total"+player)
+          .innerText = totals[player];
+      }
+      function editRound(index){
+
+          const round = history[index];
+
+          for(let i = 0; i < playerNames.length; i++){
+
+              const newScore = parseInt(
+                  prompt(
+                      `Edit ${playerNames[i]} score`,
+                      round.scores[i]
+                  )
+              );
+
+              if(isNaN(newScore)) continue;
+
+              totals[i] -= round.scores[i];
+              totals[i] += newScore;
+
+              round.scores[i] = newScore;
+
+              document.getElementById("total"+i)
+              .innerText = totals[i];
+          }
+
+          rebuildHistory();
+      }
+
+
+
+      function rebuildHistory(){
+
+          let html = "";
+
+          history.forEach((round,index)=>{
+
+              html += `<tr><td>${round.round}</td>`;
+
+              round.scores.forEach(score=>{
+                  html += `<td>${score}</td>`;
+              });
+
+              html +=
+              `<td><button onclick="editRound(${index})">Edit</button></td></tr>`;
+
+          });
+
+          document.getElementById("historyBody").innerHTML = html;
+      }
+      function endGame(){
+
+          let winner = "";
+          let highest = -999999;
+
+          for(let i = 0;
+              i < totals.length;
+              i++){
+
+              if(totals[i] > highest){
+
+                  highest = totals[i];
+                  winner = playerNames[i];
+              }
+          }
+
+      let sortedScores = [...totals].sort((a,b) => b - a);
+
+      let winningMargin =
+          sortedScores.length > 1
+          ? sortedScores[0] - sortedScores[1]
+          : 0;
+
+      document.getElementById("winnerText").innerHTML =
+      `
+      👑 WINNER 👑
+      <br><br>
+      ${winner}
+      <br>
+      ${highest} Points
+      <br><br>
+      Won by ${winningMargin} Points
+      <br>
+      ⭐ Champion ⭐
+      `;
+
+      document.getElementById("winnerBanner").style.display = "flex";
+
+      launchConfetti();
+      function closeBanner(){
+
+          document.getElementById("winnerBanner")
+          .style.display = "none";
+      }
+
+      function newGame(){
+
+          document.getElementById("gameArea")
+          .style.display = "none";
+
+          document.getElementById("historyBody")
+          .innerHTML = "";
+
+          playerNames = [];
+          totals = [];
+          roundNumber = 1;
+      }
+
+      function closeApplication(){
+
+          if(confirm("End this game session?")){
+
+              document.getElementById("winnerBanner")
+                  .style.display = "none";
+
+              document.getElementById("gameArea")
+                  .style.display = "none";
+
+              document.getElementById("historyBody")
+                  .innerHTML = "";
+
+              playerNames = [];
+              totals = [];
+              history = [];
+              roundNumber = 1;
+
+              location.reload();
+          }
+      }
+
+      const canvas =
+      document.getElementById("confetti");
+
+      const ctx =
+      canvas.getContext("2d");
+
+      let confetti = [];
+
+      function resizeCanvas(){
+
+          canvas.width =
+          window.innerWidth;
+
+          canvas.height =
+          window.innerHeight;
+      }
+
+      resizeCanvas();
+
+      window.addEventListener(
+          "resize",
+          resizeCanvas
+      );
+
+      function launchConfetti(){
+
+          confetti = [];
+
+          for(let i = 0; i < 400; i++){
+
+              confetti.push({
+
+                  x:
+                  Math.random() *
+                  canvas.width,
+
+                  y:
+                  Math.random() *
+                  canvas.height -
+                  canvas.height,
+
+                  size:
+                  Math.random() * 8 + 4,
+
+                  speed:
+                  Math.random() * 4 + 2,
+
+                  angle:
+                  Math.random() * 360,
+
+                  colour:
+                  `hsl(
+                      ${Math.random()*360},
+                      100%,
+                      50%
+                  )`
+
+              });
+          }
+
+          animateConfetti();
+      }
+
+      function animateConfetti(){
+
+          function draw(){
+
+              ctx.clearRect(
+                  0,
+                  0,
+                  canvas.width,
+                  canvas.height
+              );
+
+              confetti.forEach(piece=>{
+
+                  piece.y += piece.speed;
+
+                  piece.x +=
+                  Math.sin(
+                      piece.y / 25
+                  );
+
+                  ctx.save();
+
+                  ctx.translate(
+                      piece.x,
+                      piece.y
+                  );
+
+                  ctx.rotate(
+                      piece.angle
+                  );
+
+                  ctx.fillStyle =
+                  piece.colour;
+
+                  ctx.fillRect(
+                      0,
+                      0,
+                      piece.size,
+                      piece.size
+                  );
+
+                  ctx.restore();
+
+                  if(piece.y >
+                     canvas.height){
+
+                      piece.y = -20;
+
+                      piece.x =
+                      Math.random() *
+                      canvas.width;
+                  }
+              });
+
+              if(
+                 document
+                 .getElementById(
+                   "winnerBanner"
+                 )
+                 .style.display
+                 === "flex"
+              ){
+
+                  requestAnimationFrame(
+                      draw
+                  );
+
+              }else{
+
+                  ctx.clearRect(
+                      0,
+                      0,
+                      canvas.width,
+                      canvas.height
+                  );
+              }
+          }
+
+          draw();
+      }
+    </script>
+
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("./sw.js")
+            .then(() => console.log("Service Worker Registered"))
+            .catch((err) => console.log("Service Worker Error", err));
+        });
+      }
+    </script>
+  </body>
+</html>
